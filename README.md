@@ -1,0 +1,1 @@
+Discord Bot for Bestie Brigade Server used to automate some of our regular activities
