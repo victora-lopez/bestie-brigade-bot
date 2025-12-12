@@ -11,7 +11,41 @@ class RivalsCog(commands.Cog):
             'gurt989': {'main': 'gurt gobain', 'smurf': 'yoboygurt'}
         }
         self.bot = bot
+        self.scraper = cloudscraper.create_scraper()
         self.base_url = 'https://api.tracker.gg/api/v2/marvel-rivals/standard/'
+        self.user_ids: list[str] = []
+        self.player_peak_ranks: dict[str, str] = {}
+
+    def fetch_match_id(self, url:str = None) -> tuple[str, bool]:
+        if url is None:
+            return 'Invalid url provided for fetching match id', False
+        response = self.scraper.get(url, params={"season": "10"}, timeout=15)
+        data = response.json().get('data')
+        try:
+            match_id = data.get('matches')[0].get('attributes').get('id')
+            return match_id, True
+        except AttributeError:
+            return f'Sorry there was an error fetching the match id due to a missing attribute. Tell victor to fix his bot.', False
+        except Exception as e:
+            return f'There was an error fetching match id: {e}', False
+
+    def fetch_user_ids(self, url:str = None) -> tuple[str, bool]:
+        if url is None:
+            return 'Invalid url provided for fetching user ids', False
+        response = self.scraper.get(url, timeout=15)
+        try:
+            data = response.json().get('data')
+        except Exception as e:
+            return f'Error fetching user ids: {e}', False
+
+        segments = data.get('segments')
+        for segment in segments:
+            segment_type = segment.get('type')
+            if segment_type is not None and segment_type == 'player':
+                user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier')
+                self.user_ids.append(user_id)
+        return f'Successfully fetched user_ids', True
+
 
     @commands.command(name='rankcheck', aliases=['rc'])
     async def rankcheck(self, ctx, account_type: str = None):
@@ -30,16 +64,17 @@ class RivalsCog(commands.Cog):
             if gamer_tag is None:
                 await ctx.send(f'Invalid account type was entered please use one of the following: main, smurf, solo')
             else:
-                url = f'{self.base_url}matches/ign/{gamer_tag}'
-                scaper = cloudscraper.create_scraper()
-                response = scaper.get(url, params={"season": "10"}, timeout=15)
-                data = response.json().get('data')
-                try:
-                    match_id = data.get('matches')[0].get('attributes').get('id')
-                except AttributeError:
-                    await ctx.send(f'Sorry there was an error fetching the match id due to a missing attribute. Tell victor to fix his bot.')
-                except Exception as e:
-                    await ctx.send(f'There was an error fetching match id: {e}')
+                match_id,successful_fetch = self.fetch_match_id(f'{self.base_url}matches/ign/{gamer_tag}')
+                if successful_fetch:
+                    message,successful_fetch = self.fetch_user_ids(f'{self.base_url}matches/{match_id}')
+                    if successful_fetch:
+                        pass
+                    else:
+                        ctx.send(message)
+                else:
+                    await ctx.send(match_id) # match_id returns either the match id or error_message
+
+
             a=5
 
 async def setup(bot):
