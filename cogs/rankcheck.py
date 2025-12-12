@@ -43,6 +43,11 @@ class RivalsCog(commands.Cog):
             segment_type = segment.get('type')
             if segment_type is not None and segment_type == 'player':
                 user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier')
+                if user_id in {'lodezel', 'iodezel', 'lodezei',
+                               'chadpiIIed', 'chudimus',
+                               'RickyGallahad', 'RickyLancelot'
+                               'gurt gobain', 'yoboigurt'}:
+                    continue
                 self.user_ids.append(user_id)
         return f'Successfully fetched user_ids', True
 
