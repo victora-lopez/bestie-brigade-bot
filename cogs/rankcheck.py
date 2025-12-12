@@ -45,7 +45,7 @@ class RivalsCog(commands.Cog):
                 user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier')
                 if user_id in {'lodezel', 'iodezel', 'lodezei',
                                'chadpiIIed', 'chudimus',
-                               'RickyGallahad', 'RickyLancelot'
+                               'RickyGallahad', 'RickyLancelot',
                                'gurt gobain', 'yoboigurt'}:
                     continue
                 self.user_ids.append(user_id)
