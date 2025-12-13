@@ -26,14 +26,15 @@ class RivalsCog(commands.Cog):
         response = self.scraper.get(url, params={"season": "10"}, timeout=15)
         data = response.json().get('data')
         try:
-            match_id = data.get('matches')[0].get('attributes').get('id')
-            return match_id, True
+            self.friendly_team_id = data.get('matches')[0].get('segments')[0].get('metadata').get('teamId')
+            self.match_id = data.get('matches')[0].get('attributes').get('id')
+            return 'No error', True
         except AttributeError:
             return f'Sorry there was an error fetching the match id due to a missing attribute. Tell victor to fix his bot.', False
         except Exception as e:
             return f'There was an error fetching match id: {e}', False
 
-    def fetch_user_ids(self, url:str = None) -> tuple[str, bool]:
+    def fetch_user_ids(self, url:str = None) -> tuple[str | None, bool]:
         if url is None:
             return 'Invalid url provided for fetching user ids', False
         response = self.scraper.get(url, timeout=15)
@@ -47,6 +48,7 @@ class RivalsCog(commands.Cog):
             segment_type = segment.get('type')
             if segment_type is not None and segment_type == 'player':
                 user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier')
+                player_team_id = segment.get('metadata').get('teamId')
                 if user_id in {'lodezel', 'iodezel', 'lodezei',
                                'chadpiIIed', 'chudimus',
                                'RickyGallahad', 'RickyLancelot',
