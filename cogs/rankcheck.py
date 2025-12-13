@@ -1,3 +1,5 @@
+import discord
+from datetime import datetime
 from discord.ext import commands
 import cloudscraper
 
@@ -114,11 +116,18 @@ class RivalsCog(commands.Cog):
                 if successful_fetch:
                     try:
                         self.fetch_peak_ranks()
+                        embed = discord.Embed(title='__**Rank Check:**__', color=0xfce1e4, timestamp=datetime.now())
+                        for team, peak_rank_map in self.player_peak_ranks.items():
+                            lines: list[str] = []
+                            for player, peak_rank in peak_rank_map.items():
+                                lines.append(f'> {player}: {peak_rank}')
+                            content = '\n'.join(lines)
+                            embed.add_field(name=f'**{team}**', value=content, inline=False)
+                        await ctx.send(embed=embed)
                     except Exception as e:
                         print(f'An error has occurred: {e}')
-                    b=5
                 else:
-                    ctx.send(self.error_message)
+                    await ctx.send(self.error_message)
             else:
                 await ctx.send(self.error_message)
 
