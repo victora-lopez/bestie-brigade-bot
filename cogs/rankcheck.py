@@ -20,6 +20,7 @@ class RivalsCog(commands.Cog):
         self.friendly_team_id: int = 0
         self.match_id: str = ''
         self.error_message: str = ''
+        self.embed = discord.Embed(title='__**Rank Check:**__', color=0xfce1e4, timestamp=datetime.now())
 
     def fetch_match_id(self, url:str = None) -> bool:
         if url is None:
@@ -100,7 +101,13 @@ class RivalsCog(commands.Cog):
             gamer_tag = gamer_tag_map.get(account_type)
             return gamer_tag, None
 
-
+    def generate_table_content(self):
+        for team, peak_rank_map in self.player_peak_ranks.items():
+            lines: list[str] = []
+            for player, peak_rank in peak_rank_map.items():
+                lines.append(f'> {player}: {peak_rank}')
+            content = '\n'.join(lines)
+            self.embed.add_field(name=f'**{team}**', value=content, inline=False)
 
     @commands.command(name='rankcheck', aliases=['rc'])
     async def rankcheck(self, ctx, account_type: str = 'main'):
@@ -116,14 +123,8 @@ class RivalsCog(commands.Cog):
                 if successful_fetch:
                     try:
                         self.fetch_peak_ranks()
-                        embed = discord.Embed(title='__**Rank Check:**__', color=0xfce1e4, timestamp=datetime.now())
-                        for team, peak_rank_map in self.player_peak_ranks.items():
-                            lines: list[str] = []
-                            for player, peak_rank in peak_rank_map.items():
-                                lines.append(f'> {player}: {peak_rank}')
-                            content = '\n'.join(lines)
-                            embed.add_field(name=f'**{team}**', value=content, inline=False)
-                        await ctx.send(embed=embed)
+                        self.generate_table_content()
+                        await ctx.send(embed=self.embed)
                     except Exception as e:
                         print(f'An error has occurred: {e}')
                 else:
