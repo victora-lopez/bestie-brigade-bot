@@ -13,8 +13,12 @@ class RivalsCog(commands.Cog):
         self.bot = bot
         self.scraper = cloudscraper.create_scraper()
         self.base_url = 'https://api.tracker.gg/api/v2/marvel-rivals/standard/'
-        self.user_ids: list[str] = []
-        self.player_peak_ranks: dict[str, str] = {}
+        self.user_ids: list[tuple[str, int]] = []
+        self.player_peak_ranks: dict[str, dict[str, str]] = {'Our team': {}, 'Enemy team': {}}
+        self.friendly_team_id: int = 0
+        self.match_id: str = ''
+        # TODO: Refactor include error message here and update when an error occurs?
+        # TODO: solves a lot or return and weird function organization
 
     def fetch_match_id(self, url:str = None) -> tuple[str, bool]:
         if url is None:
