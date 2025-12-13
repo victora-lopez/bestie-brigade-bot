@@ -57,7 +57,7 @@ class RivalsCog(commands.Cog):
                 self.user_ids.append((user_id, player_team_id))
         return None, True
 
-    def fetch_peak_ranks(self) -> tuple[str | None, bool]:
+    def fetch_peak_ranks(self) -> None:
         for player_id, player_team_id in self.user_ids:
             url = f'{self.base_url}profile/ign/{player_id}/segments/career?mode=all'
             response = self.scraper.get(url, timeout=15)
@@ -83,7 +83,6 @@ class RivalsCog(commands.Cog):
                 self.player_peak_ranks['Our team'][player_id] = player_peak
             else:
                 self.player_peak_ranks['Enemy team'][player_id] = player_peak
-
 
     def get_gamer_tag(self, user: str, account_type: str) -> tuple[str | None, str | None]:
         gamer_tag_map = self.gamer_tag_map.get(user)
