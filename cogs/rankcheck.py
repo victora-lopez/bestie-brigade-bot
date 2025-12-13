@@ -17,37 +17,41 @@ class RivalsCog(commands.Cog):
         self.player_peak_ranks: dict[str, dict[str, str]] = {'Our team': {}, 'Enemy team': {}}
         self.friendly_team_id: int = 0
         self.match_id: str = ''
-        # TODO: Refactor include error message here and update when an error occurs?
-        # TODO: solves a lot or return and weird function organization
+        self.error_message: str = ''
 
-    def fetch_match_id(self, url:str = None) -> tuple[str, bool]:
+    def fetch_match_id(self, url:str = None) -> bool:
         if url is None:
-            return 'Invalid url provided for fetching match id', False
+            self.error_message = 'Invalid url provided for fetching match id'
+            return False
         response = self.scraper.get(url, params={"season": "10"}, timeout=15)
         data = response.json().get('data')
         try:
             self.friendly_team_id = data.get('matches')[0].get('segments')[0].get('metadata').get('teamId')
             self.match_id = data.get('matches')[0].get('attributes').get('id')
-            return 'No error', True
+            return True
         except AttributeError:
-            return f'Sorry there was an error fetching the match id due to a missing attribute. Tell victor to fix his bot.', False
+            self.error_message = 'Sorry there was an error fetching the match id due to a missing attribute. Tell victor to fix his bot.'
+            return False
         except Exception as e:
-            return f'There was an error fetching match id: {e}', False
+            self.error_message = f'There was an error fetching match id: {e}'
+            return False
 
-    def fetch_user_ids(self, url:str = None) -> tuple[str | None, bool]:
+    def fetch_user_ids(self, url:str = None) -> bool:
         if url is None:
-            return 'Invalid url provided for fetching user ids', False
+            self.error_message = 'Invalid url provided for fetching user ids'
+            return False
         response = self.scraper.get(url, timeout=15)
         try:
             data = response.json().get('data')
         except Exception as e:
-            return f'Error fetching user ids: {e}', False
+            self.error_message = f'Error fetching user ids: {e}'
+            return False
 
         segments = data.get('segments')
         for segment in segments:
             segment_type = segment.get('type')
             if segment_type is not None and segment_type == 'player':
-                user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier')
+                user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier') #TODO: refactor to use library that fetches nested json data
                 player_team_id = segment.get('metadata').get('teamId')
                 if user_id in {'lodezel', 'iodezel', 'lodezei',
                                'chadpiIIed', 'chudimus',
@@ -55,7 +59,7 @@ class RivalsCog(commands.Cog):
                                'gurt gobain', 'yoboigurt'}:
                     continue
                 self.user_ids.append((user_id, player_team_id))
-        return None, True
+        return True
 
     def fetch_peak_ranks(self) -> None:
         for player_id, player_team_id in self.user_ids:
@@ -78,7 +82,7 @@ class RivalsCog(commands.Cog):
                     player_peak = record.get('stats').get('lifetimePeakRanked').get('metadata').get('tierName')
                     break
             else:
-                player_peak = f'No record found for {player_id}\'s peak rank'
+                player_peak = f'Couldn\'t find {player_id}\'s peak'
             if player_team_id == self.friendly_team_id:
                 self.player_peak_ranks['Our team'][player_id] = player_peak
             else:
@@ -104,23 +108,19 @@ class RivalsCog(commands.Cog):
         if gamer_tag is None:
             await ctx.send(message)
         else:
-            error_msg,successful_fetch = self.fetch_match_id(f'{self.base_url}matches/ign/{gamer_tag}')
+            successful_fetch = self.fetch_match_id(f'{self.base_url}matches/ign/{gamer_tag}')
             if successful_fetch:
-                message,successful_fetch = self.fetch_user_ids(f'{self.base_url}matches/{self.match_id}')
+                successful_fetch = self.fetch_user_ids(f'{self.base_url}matches/{self.match_id}')
                 if successful_fetch:
                     try:
                         self.fetch_peak_ranks()
                     except Exception as e:
                         print(f'An error has occurred: {e}')
-                    a=5
                     b=5
                 else:
-                    ctx.send(message)
+                    ctx.send(self.error_message)
             else:
-                await ctx.send(error_msg)
-
-
-        a=5
+                await ctx.send(self.error_message)
 
 async def setup(bot):
     await bot.add_cog(RivalsCog(bot))
