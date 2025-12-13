@@ -57,10 +57,9 @@ class RivalsCog(commands.Cog):
                 self.user_ids.append((user_id, player_team_id))
         return None, True
 
-    def fetch_peak_ranks(self, url:str = None) -> tuple[str | None, bool]:
-        if url is None:
-            return 'Invalid url provided for fetching peak ranks', False
+    def fetch_peak_ranks(self) -> tuple[str | None, bool]:
         for player_id, player_team_id in self.user_ids:
+            url = f'{self.base_url}profile/ign/{player_id}/segments/career?mode=all'
             response = self.scraper.get(url, timeout=15)
             if response.ok:
                 player_data = response.json().get('data')
@@ -111,7 +110,7 @@ class RivalsCog(commands.Cog):
                 message,successful_fetch = self.fetch_user_ids(f'{self.base_url}matches/{self.match_id}')
                 if successful_fetch:
                     try:
-                        self.fetch_peak_ranks(f'{self.base_url}profile/ign/{player_id}/segments/career?mode=all', player_id, player_team_id)
+                        self.fetch_peak_ranks()
                     except Exception as e:
                         print(f'An error has occurred: {e}')
                     a=5
