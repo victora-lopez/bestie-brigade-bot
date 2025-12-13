@@ -99,7 +99,7 @@ class RivalsCog(commands.Cog):
 
 
     @commands.command(name='rankcheck', aliases=['rc'])
-    async def rankcheck(self, ctx, account_type: str = None):
+    async def rankcheck(self, ctx, account_type: str = 'main'):
         await ctx.send(f"Entered rankcheck function, {ctx.author} initiated")
         user = ctx.author.name.lower()
         gamer_tag = self.gamer_tag_map.get(user)
