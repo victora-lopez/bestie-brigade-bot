@@ -54,8 +54,48 @@ class RivalsCog(commands.Cog):
                                'RickyGallahad', 'RickyLancelot',
                                'gurt gobain', 'yoboigurt'}:
                     continue
-                self.user_ids.append(user_id)
-        return f'Successfully fetched user_ids', True
+                self.user_ids.append((user_id, player_team_id))
+        return None, True
+
+    def fetch_peak_ranks(self, url:str = None) -> tuple[str | None, bool]:
+        if url is None:
+            return 'Invalid url provided for fetching peak ranks', False
+        for player_id, player_team_id in self.user_ids:
+            response = self.scraper.get(url, timeout=15)
+            if response.ok:
+                player_data = response.json().get('data')
+            elif response.status_code == 400:
+                if player_team_id == self.friendly_team_id:
+                    self.player_peak_ranks['Our team'][player_id] = 'Private Account'
+                else:
+                    self.player_peak_ranks['Enemy team'][player_id] = 'Private Account'
+                continue
+            else:
+                print(f'An error has occurred fetching {player_id}\'s peak rank')
+                continue
+
+            for record in player_data:
+                if record.get('type') == 'ranked-peaks':
+                    player_peak = record.get('stats').get('lifetimePeakRanked').get('metadata').get('tierName')
+                    break
+            else:
+                player_peak = f'No record found for {player_id}\'s peak rank'
+            if player_team_id == self.friendly_team_id:
+                self.player_peak_ranks['Our team'][player_id] = player_peak
+            else:
+                self.player_peak_ranks['Enemy team'][player_id] = player_peak
+
+
+    def get_gamer_tag(self, user: str, account_type: str) -> tuple[str | None, str | None]:
+        gamer_tag_map = self.gamer_tag_map.get(user)
+        if gamer_tag_map is None:
+            return None, f'Couldn\'t find {user}\'s gamer tag'
+        else:
+            if account_type not in {'main', 'smurf', 'solo'}:
+                return None, 'Man just put main or smurf with the rank check command'
+            gamer_tag = gamer_tag_map.get(account_type)
+            return gamer_tag, None
+
 
 
     @commands.command(name='rankcheck', aliases=['rc'])
