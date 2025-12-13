@@ -102,31 +102,27 @@ class RivalsCog(commands.Cog):
     async def rankcheck(self, ctx, account_type: str = 'main'):
         await ctx.send(f"Entered rankcheck function, {ctx.author} initiated")
         user = ctx.author.name.lower()
-        gamer_tag = self.gamer_tag_map.get(user)
-
+        gamer_tag, message = self.get_gamer_tag(user, account_type)
         if gamer_tag is None:
-            await ctx.send(f'Couldn\'t find {user}\'s gamer tag')
+            await ctx.send(message)
         else:
-            if account_type is None:
-                account_type = 'main'
-
-            gamer_tag = gamer_tag.get(account_type)
-
-            if gamer_tag is None:
-                await ctx.send(f'Invalid account type was entered please use one of the following: main, smurf, solo')
-            else:
-                match_id,successful_fetch = self.fetch_match_id(f'{self.base_url}matches/ign/{gamer_tag}')
+            error_msg,successful_fetch = self.fetch_match_id(f'{self.base_url}matches/ign/{gamer_tag}')
+            if successful_fetch:
+                message,successful_fetch = self.fetch_user_ids(f'{self.base_url}matches/{self.match_id}')
                 if successful_fetch:
-                    message,successful_fetch = self.fetch_user_ids(f'{self.base_url}matches/{match_id}')
-                    if successful_fetch:
-                        pass
-                    else:
-                        ctx.send(message)
+                    try:
+                        self.fetch_peak_ranks(f'{self.base_url}profile/ign/{player_id}/segments/career?mode=all', player_id, player_team_id)
+                    except Exception as e:
+                        print(f'An error has occurred: {e}')
+                    a=5
+                    b=5
                 else:
-                    await ctx.send(match_id) # match_id returns either the match id or error_message
+                    ctx.send(message)
+            else:
+                await ctx.send(error_msg)
 
 
-            a=5
+        a=5
 
 async def setup(bot):
     await bot.add_cog(RivalsCog(bot))
