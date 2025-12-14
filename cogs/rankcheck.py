@@ -15,22 +15,31 @@ class RivalsCog(commands.Cog):
             'gurt989': {'main': 'gurt gobain', 'smurf': 'yoboygurt'}
         }
         self.bot = bot
-        self.scraper = cloudscraper.create_scraper()
         self.base_url = 'https://api.tracker.gg/api/v2/marvel-rivals/standard/'
+        self.scraper = cloudscraper.create_scraper()
+        self.embed = discord.Embed(title='__**Rank Check:**__', color=0xfce1e4, timestamp=datetime.now())
+        self.executor = ThreadPoolExecutor(max_workers=12)
         self.user_ids: list[tuple[str, int]] = []
         self.player_peak_ranks: dict[str, dict[str, str]] = {'Our team': {}, 'Enemy team': {}}
         self.friendly_team_id: int = 0
         self.match_id: str = ''
         self.error_message: str = ''
-        self.embed = discord.Embed(title='__**Rank Check:**__', color=0xfce1e4, timestamp=datetime.now())
+
+    def _initialize_rivals_defaults(self):
+        self.user_ids: list[tuple[str, int]] = []
+        self.player_peak_ranks: dict[str, dict[str, str]] = {'Our team': {}, 'Enemy team': {}}
+        self.friendly_team_id: int = 0
+        self.match_id: str = ''
+        self.error_message: str = ''
+
 
     def fetch_match_id(self, url:str = None) -> bool:
         if url is None:
             self.error_message = 'Invalid url provided for fetching match id'
             return False
         response = self.scraper.get(url, params={"season": "10"}, timeout=15)
-        data = response.json().get('data')
         try:
+            data = response.json().get('data')
             self.friendly_team_id = data.get('matches')[0].get('segments')[0].get('metadata').get('teamId')
             self.match_id = data.get('matches')[0].get('attributes').get('id')
             return True
@@ -136,6 +145,8 @@ class RivalsCog(commands.Cog):
                     await ctx.send(self.error_message)
             else:
                 await ctx.send(self.error_message)
+
+        self._initialize_rivals_defaults() # always want to set values back to default/empty values for each run
 
 async def setup(bot):
     await bot.add_cog(RivalsCog(bot))
