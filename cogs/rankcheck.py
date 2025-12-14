@@ -1,7 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
+import cloudscraper
 import discord
 from datetime import datetime
 from discord.ext import commands
-import cloudscraper
+from tqdm import tqdm
 
 
 class RivalsCog(commands.Cog):
@@ -65,31 +67,34 @@ class RivalsCog(commands.Cog):
         return True
 
     def fetch_peak_ranks(self) -> None:
-        for player_id, player_team_id in self.user_ids:
-            url = f'{self.base_url}profile/ign/{player_id}/segments/career?mode=all'
-            response = self.scraper.get(url, timeout=15)
-            if response.ok:
-                player_data = response.json().get('data')
-            elif response.status_code == 400:
-                if player_team_id == self.friendly_team_id:
-                    self.player_peak_ranks['Our team'][player_id] = 'Private Account'
+        with tqdm(total=len(self.user_ids), desc='Fetching peak ranks', unit='profiles') as progress_bar:
+            for player_id, player_team_id in self.user_ids:
+                url = f'{self.base_url}profile/ign/{player_id}/segments/career?mode=all'
+                response = self.scraper.get(url, timeout=15)
+                if response.ok:
+                    player_data = response.json().get('data')
+                elif response.status_code == 400:
+                    if player_team_id == self.friendly_team_id:
+                        self.player_peak_ranks['Our team'][player_id] = 'Private Account'
+                    else:
+                        self.player_peak_ranks['Enemy team'][player_id] = 'Private Account'
+                    progress_bar.update(1)
+                    continue
                 else:
-                    self.player_peak_ranks['Enemy team'][player_id] = 'Private Account'
-                continue
-            else:
-                print(f'An error has occurred fetching {player_id}\'s peak rank')
-                continue
+                    print(f'An error has occurred fetching {player_id}\'s peak rank')
+                    continue
 
-            for record in player_data:
-                if record.get('type') == 'ranked-peaks':
-                    player_peak = record.get('stats').get('lifetimePeakRanked').get('metadata').get('tierName')
-                    break
-            else:
-                player_peak = f'Couldn\'t find {player_id}\'s peak'
-            if player_team_id == self.friendly_team_id:
-                self.player_peak_ranks['Our team'][player_id] = player_peak
-            else:
-                self.player_peak_ranks['Enemy team'][player_id] = player_peak
+                for record in player_data:
+                    if record.get('type') == 'ranked-peaks':
+                        player_peak = record.get('stats').get('lifetimePeakRanked').get('metadata').get('tierName')
+                        break
+                else:
+                    player_peak = f'Couldn\'t find {player_id}\'s peak'
+                if player_team_id == self.friendly_team_id:
+                    self.player_peak_ranks['Our team'][player_id] = player_peak
+                else:
+                    self.player_peak_ranks['Enemy team'][player_id] = player_peak
+                progress_bar.update(1)
 
     def get_gamer_tag(self, user: str, account_type: str) -> tuple[str | None, str | None]:
         gamer_tag_map = self.gamer_tag_map.get(user)
