@@ -139,6 +139,7 @@ class RivalsCog(commands.Cog):
 
     @commands.command(name='rankcheck', aliases=['rc'])
     async def rankcheck(self, ctx, account_type: str = 'main'):
+        self._initialize_rivals_defaults() # always want to set values back to default/empty values for each run
         await ctx.send(f"Entered rankcheck function, {ctx.author} initiated")
         user = ctx.author.name.lower()
         gamer_tag, message = self.get_gamer_tag(user, account_type)
@@ -159,7 +160,6 @@ class RivalsCog(commands.Cog):
                     await ctx.send(self.error_message)
             else:
                 await ctx.send(self.error_message)
-        self._initialize_rivals_defaults() # always want to set values back to default/empty values for each run
 
 async def setup(bot):
     await bot.add_cog(RivalsCog(bot))
