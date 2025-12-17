@@ -57,24 +57,27 @@ class RivalsCog(commands.Cog):
             self.error_message = 'Invalid url provided for fetching user ids'
             return False
         response = self.scraper.get(url, timeout=15)
+        if not response.ok:
+            self.error_message = response.json().get('errors')[0].get('message')
+            return False
         try:
             data = response.json().get('data')
+
+            segments = data.get('segments')
+            for segment in segments:
+                segment_type = segment.get('type')
+                if segment_type is not None and segment_type == 'player':
+                    user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier') #TODO: refactor to use library that fetches nested json data
+                    player_team_id = segment.get('metadata').get('teamId')
+                    if user_id in {'lodezel', 'iodezel', 'lodezei',
+                                   'chadpiIIed', 'chudimus',
+                                   'RickyGallahad', 'RickyLancelot',
+                                   'gurt gobain', 'yoboigurt'}:
+                        continue
+                    self.user_ids.append((user_id, player_team_id))
         except Exception as e:
             self.error_message = f'Error fetching user ids: {e}'
             return False
-
-        segments = data.get('segments')
-        for segment in segments:
-            segment_type = segment.get('type')
-            if segment_type is not None and segment_type == 'player':
-                user_id = segment.get('metadata').get('platformInfo').get('platformUserIdentifier') #TODO: refactor to use library that fetches nested json data
-                player_team_id = segment.get('metadata').get('teamId')
-                if user_id in {'lodezel', 'iodezel', 'lodezei',
-                               'chadpiIIed', 'chudimus',
-                               'RickyGallahad', 'RickyLancelot',
-                               'gurt gobain', 'yoboigurt'}:
-                    continue
-                self.user_ids.append((user_id, player_team_id))
         return True
 
     def thread_peak_ranks(self, player_info: tuple[str, int], progress_bar: tqdm):
