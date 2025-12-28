@@ -5,5 +5,5 @@ load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 PREFIX = os.getenv('PREFIX','!')
-OWNER_IDS = {408017625688309770}
+OWNER_IDS = os.getenv('OWNER_IDS',None)
 INTENTS = None
